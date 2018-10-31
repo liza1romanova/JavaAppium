@@ -1,14 +1,11 @@
 package lib.ui.ios;
 
-import io.appium.java_client.AppiumDriver;
 import lib.ui.SearchPageObject;
-import org.openqa.selenium.WebElement;
-
-import java.util.List;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 public class iosSearchPageObject extends SearchPageObject {
 
-    public iosSearchPageObject(AppiumDriver driver)
+    public iosSearchPageObject(RemoteWebDriver driver)
     {
         super(driver);
     }

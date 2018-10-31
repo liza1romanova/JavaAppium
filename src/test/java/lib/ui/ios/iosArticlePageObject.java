@@ -1,7 +1,7 @@
 package lib.ui.ios;
 
-import io.appium.java_client.AppiumDriver;
 import lib.ui.ArticlePageObject;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 public class iosArticlePageObject extends ArticlePageObject {
 
@@ -18,7 +18,7 @@ public class iosArticlePageObject extends ArticlePageObject {
             CLOSE_ARTICLE_BUTTON = "xpath://XCUIElementTypeButton[@name=\"Back\"]";
     }
 
-    public iosArticlePageObject(AppiumDriver driver)
+    public iosArticlePageObject(RemoteWebDriver driver)
     {
         super(driver);
     }

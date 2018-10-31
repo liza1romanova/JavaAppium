@@ -1,8 +1,10 @@
 package lib.ui;
 
-import io.appium.java_client.AppiumDriver;
 import lib.Platform;
+import org.junit.Assert;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 abstract public class ArticlePageObject extends MainPageObject
 {
@@ -11,6 +13,7 @@ abstract public class ArticlePageObject extends MainPageObject
         SUBTITLE,
         FOOTER_ELEMENT,
         OPTIONS_BUTTON,
+        OPTIONS_REMOVE_FROM_MY_LIST_BUTTON,
         OPTIONS_ADD_TO_MY_LIST_BUTTON,
         ADD_TO_MY_LIST_OVERLAY,
         MY_LIST_NAME_INPUT,
@@ -18,7 +21,7 @@ abstract public class ArticlePageObject extends MainPageObject
         EXISTING_LIST_TPL,
         CLOSE_ARTICLE_BUTTON;
 
-    public ArticlePageObject(AppiumDriver driver)
+    public ArticlePageObject(RemoteWebDriver driver)
     {
         super(driver);
     }
@@ -50,12 +53,39 @@ abstract public class ArticlePageObject extends MainPageObject
     public String getArticleTitle()
     {
         WebElement title_element = waitForTitleElement();
-        if(Platform.getInstance().isAndroid()) {
+        if (Platform.getInstance().isAndroid()){
             return title_element.getAttribute("text");
-        }
-        else {
+        } else if (Platform.getInstance().isIOS()){
             return title_element.getAttribute("name");
+        } else {
+            return title_element.getText();
         }
+    }
+
+    public void scrollWebPageUp()
+    {
+        if (Platform.getInstance().isMW()){
+            JavascriptExecutor JSExecutor = (JavascriptExecutor) driver;
+            JSExecutor.executeScript("window.scrollBy(0, 250)");
+        } else {
+            System.out.println("Method scrollWebPageUp() does nothing for platform " + Platform.getInstance().getPlatformVar());
+        }
+    }
+
+    public void scrollWebPageTillElementNotVisible(String locator, String error_message, int max_swipes)
+    {
+        int already_swiped = 0;
+
+        WebElement element = this.waitForElementPresent(locator, error_message);
+
+        while (!this.isElementLocatedOnTheScreen(locator)){
+            scrollWebPageUp();
+            ++already_swiped;
+            if (already_swiped > max_swipes){
+                Assert.assertTrue(error_message, element.isDisplayed());
+            }
+        }
+
     }
 
     public void assertArticleTitle()
@@ -65,16 +95,26 @@ abstract public class ArticlePageObject extends MainPageObject
 
     public void swipeToFooter()
     {
-        if(Platform.getInstance().isIOS()){
-            this.swipeTillElementAppear(FOOTER_ELEMENT,"Cannot find the end of Article", 40);
-        } else{
+        if (Platform.getInstance().isAndroid()) {
             this.swipeUpToFindElement(
                     FOOTER_ELEMENT,
-                    "Cannot find the end of Article",
+                    "Cannot find the end of the article",
+                    40
+            );
+        } else if (Platform.getInstance().isIOS()){
+            this.swipeTillElementAppear(
+                    FOOTER_ELEMENT,
+                    "Cannot find the end of the article",
+                    40
+            );
+        } else {
+            this.scrollWebPageTillElementNotVisible(
+                    FOOTER_ELEMENT,
+                    "Cannot find the end of article",
                     40
             );
         }
-    }
+        }
 
     public void addArticleToNewList(String name_of_folder) throws InterruptedException {
         this.waitForElementAndClick(
@@ -120,36 +160,72 @@ abstract public class ArticlePageObject extends MainPageObject
     }
 
     public void addArticleToExistingList(String list_name) throws InterruptedException {
-        this.waitForElementAndClick(
-                OPTIONS_BUTTON,
-                "Can't find article to open article options",
-                5
-        );
+        if(Platform.getInstance().isIOS()||Platform.getInstance().isAndroid()) {
+            this.waitForElementAndClick(
+                    OPTIONS_BUTTON,
+                    "Can't find article to open article options",
+                    5
+            );
 
-        Thread.sleep(15000);
+            Thread.sleep(15000);
 
-        this.waitForElementAndClick(
-                OPTIONS_ADD_TO_MY_LIST_BUTTON,
-                "Cannot find option to add article to reading list",
-                5
-        );
+            this.waitForElementAndClick(
+                    OPTIONS_ADD_TO_MY_LIST_BUTTON,
+                    "Cannot find option to add article to reading list",
+                    5
+            );
 
-        Thread.sleep(3000);
+            Thread.sleep(3000);
 
-        String element = getExistingListXpath(list_name);
+            String element = getExistingListXpath(list_name);
 
-        this.waitForElementAndClick(
-                element,
-                "Cannot find saved list " + list_name + " to add the article",
-                15);
+            this.waitForElementAndClick(
+                    element,
+                    "Cannot find saved list " + list_name + " to add the article",
+                    15);
+
+        }else{
+            System.out.println("Method addArticleToExistingList does nothing for platform " + Platform.getInstance().getPlatformVar());
+        }
     }
 
     public void closeArticle()
     {
-        this.waitForElementAndClick(
-                CLOSE_ARTICLE_BUTTON,
-                "Can't close article, can't find X button",
-                10
-        );
+        if(Platform.getInstance().isIOS()||Platform.getInstance().isAndroid()) {
+            this.waitForElementAndClick(
+                    CLOSE_ARTICLE_BUTTON,
+                    "Can't close article, can't find X button",
+                    10
+            );
+        } else{
+            System.out.println("Method closeArticle does nothing for platform " + Platform.getInstance().getPlatformVar());
+        }
+    }
+
+    public void addArticlesToMySaved() throws InterruptedException {
+        if (Platform.getInstance().isMW()) {
+            Thread.sleep(2000);
+            this.removeArticleFromSavedIfItAdded();
+            this.waitForElementAndClick(OPTIONS_ADD_TO_MY_LIST_BUTTON, "Cannot find option to add article to reading list", 10);
+        }
+        else {
+            System.out.println("Method addArticlesToMySaved does nothing for platform " + Platform.getInstance().getPlatformVar());
+        }
+
+    }
+    public void removeArticleFromSavedIfItAdded()
+    {
+        if(this.isElementPresent(OPTIONS_REMOVE_FROM_MY_LIST_BUTTON))
+        {
+            this.waitForElementAndClick(
+                    OPTIONS_REMOVE_FROM_MY_LIST_BUTTON,
+                    "Cannot click button to remove an article from saved",
+                    1
+            );
+            this.waitForElementPresent(
+                    OPTIONS_ADD_TO_MY_LIST_BUTTON,
+                    "Cannot find button to add an article to saved list after removing it from this list before"
+            );
+        }
     }
 }

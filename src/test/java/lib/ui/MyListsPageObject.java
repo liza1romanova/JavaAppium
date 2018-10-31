@@ -1,6 +1,7 @@
 package lib.ui;
 
-import io.appium.java_client.AppiumDriver;
+import lib.Platform;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 public class MyListsPageObject extends MainPageObject{
 
@@ -9,6 +10,7 @@ public class MyListsPageObject extends MainPageObject{
         ARTICLE_BY_TITLE_TPL,
         READING_LISTS_TAB,
         EDIT_BUTTON,
+        REMOVE_FROM_SAVED_BUTTON,
         REMOVE_BUTTON;
 
     /* TEMPLATES METHODS */
@@ -21,9 +23,15 @@ public class MyListsPageObject extends MainPageObject{
     {
         return ARTICLE_BY_TITLE_TPL.replace("{TITLE}", article_title);
     }
+
+    private static String getRemoveButtonByTitle(String article_title)
+    {
+        return REMOVE_FROM_SAVED_BUTTON.replace("{TITLE}", article_title);
+    }
+
     /* TEMPLATES METHODS */
 
-    public MyListsPageObject(AppiumDriver driver)
+    public MyListsPageObject(RemoteWebDriver driver)
     {
         super(driver);
     }
@@ -83,13 +91,24 @@ public class MyListsPageObject extends MainPageObject{
 
     public void swipeByArticleToDelete(String article_title)
     {
-        this.waitForArticleToAppearByTitle(article_title);
-        String article_xpath = getFolderXpathByName(article_title);
-        this.swipeElementToleft(
-                article_xpath,
-                "Can't find saved article"
-        );
-        this.waitForArticleToDisappearByTitle(article_title);
+        if(Platform.getInstance().isIOS()||Platform.getInstance().isAndroid()){
+            this.waitForArticleToAppearByTitle(article_title);
+            String article_xpath = getFolderXpathByName(article_title);
+            this.swipeElementToleft(
+                    article_xpath,
+                    "Can't find saved article"
+            );
+            this.waitForArticleToDisappearByTitle(article_title);
+        } else {
+            String remove_locator = getRemoveButtonByTitle(article_title);
+            this.waitForElementAndClick(
+                    remove_locator,
+                    "Can't click remove button article for " + article_title,
+                    10
+            );
+            driver.navigate().refresh();
+        }
+
     }
 
     public void openSavedArticle(String article_title)
